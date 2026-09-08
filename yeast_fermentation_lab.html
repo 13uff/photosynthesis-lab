@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>효모의 발효에 영향을 미치는 요인 가상실험</title>
+<style>
+:root{
+  --bg:#f6f7fb; --panel:#fff; --line:#dbe1ea; --text:#1f2a37; --muted:#667085;
+  --accent:#6b4ce6; --soft:#f1efff; --soft2:#f8f3ea;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;line-height:1.55}
+button,input,select,textarea{font:inherit}
+.app{max-width:1200px;margin:0 auto;padding:18px}
+header{padding:10px 4px 18px}
+h1{margin:0;font-size:clamp(25px,4vw,35px)}
+header p{margin:8px 0 0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:.94fr 1.26fr;gap:16px}
+.panel,.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.field{margin:14px 0}
+label{display:block;font-weight:800;margin-bottom:6px}
+select,textarea,input[type=range]{width:100%}
+select,textarea{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:white}
+textarea{min-height:84px;resize:vertical}
+.rangeRow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.value{font-weight:900}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{border:1px solid var(--line);background:white;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:white}
+.vars,.box{background:var(--soft);padding:12px 14px;border-radius:12px;font-size:14px}
+.metricWrap{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.metric{font-size:32px;font-weight:900;letter-spacing:-.04em}
+.small,.status{font-size:13px;color:var(--muted)}
+.chartWrap{overflow-x:auto}
+svg{width:100%;min-width:620px;height:auto}
+.tableWrap{overflow:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;min-width:850px;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:center}
+th:first-child,td:first-child{text-align:left}
+th{background:#fafbff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.call{background:var(--soft2);padding:12px 14px;border-radius:12px;font-size:14px;margin-top:10px}
+.badge{display:inline-block;background:var(--soft);padding:4px 10px;border-radius:999px;font-size:12px;color:var(--muted);font-weight:700}
+@media(max-width:900px){.grid,.two{grid-template-columns:1fr}.app{padding:12px}}
+@media print{.actions{display:none}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <span class="badge">생명과학 실험 12</span>
+    <h1>효모의 발효에 영향을 미치는 요인 가상실험</h1>
+    <p>교과서의 발효관 실험처럼 효모의 발효를 기체 발생량으로 비교할 수 있습니다.</p>
+  </header>
+
+  <section class="grid">
+    <section class="panel">
+      <h2>1. 실험 설계</h2>
+
+      <div class="field">
+        <label for="factor">조작 변인</label>
+        <select id="factor">
+          <option value="substrate">기질의 종류</option>
+          <option value="temp">온도</option>
+        </select>
+      </div>
+
+      <div class="field" id="substrateField">
+        <label for="substrate">기질 선택</label>
+        <select id="substrate">
+          <option value="control">대조군(증류수)</option>
+          <option value="glucose" selected>포도당</option>
+          <option value="galactose">갈락토오스</option>
+          <option value="sucrose">설탕</option>
+          <option value="lactose">젖당</option>
+          <option value="starch">녹말</option>
+        </select>
+      </div>
+
+      <div class="field" id="tempField">
+        <label for="temp">온도</label>
+        <div class="rangeRow">
+          <input id="temp" type="range" min="10" max="40" step="1" value="35">
+          <output id="tempOut" class="value">35 ℃</output>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hypothesis">가설</label>
+        <textarea id="hypothesis" placeholder="예) 효모는 포도당을 기질로 사용할 때 가장 활발하게 발효할 것이다."></textarea>
+      </div>
+
+      <div id="vars" class="vars"></div>
+
+      <div class="actions">
+        <button id="run" class="primary">현재 조건 실험</button>
+        <button id="compare">자동 비교</button>
+        <button id="reset">초기화</button>
+      </div>
+      <div id="status" class="status">발효관 실험처럼 5분 간격으로 25분 동안 기체 발생량을 측정합니다.</div>
+    </section>
+
+    <section class="panel">
+      <div class="metricWrap">
+        <div>
+          <h2>2. 기체 발생량 변화</h2>
+          <div class="small">측정 간격 5분 / 총 25분</div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">25분 후 누적 기체 발생량</div>
+          <div id="gasNow" class="metric">0.0</div>
+          <div class="small">mL</div>
+        </div>
+      </div>
+      <div class="chartWrap"><svg id="chart" viewBox="0 0 760 390"></svg></div>
+      <div id="analysis" class="call"></div>
+    </section>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>3. 결과 및 논의</h2>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>실험</th><th>기질</th><th>온도</th><th>5분</th><th>10분</th><th>15분</th><th>20분</th><th>25분</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button id="csv">CSV 저장</button>
+      <button onclick="window.print()">인쇄 / PDF 저장</button>
+    </div>
+  </section>
+
+  <section class="two">
+    <article class="card">
+      <h3>이론 핵심</h3>
+      <div class="box">
+        효모는 산소가 없을 때 <b>알코올발효</b>를 하여 ATP를 얻습니다.<br>
+        포도당 → 피루브산 → 아세트알데하이드 → 에탄올<br>
+        이 과정에서 <b>CO₂</b>가 발생하므로 기체 발생량으로 발효 정도를 비교할 수 있습니다.
+      </div>
+      <div class="call">
+        ATP는 해당 과정에서 만들어지고, 이후 반응은 NAD⁺를 재생하여 해당 과정이 계속되도록 돕습니다.
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>생각해 볼 점</h3>
+      <ul>
+        <li>왜 효모는 포도당에서 발효가 더 잘 일어날까?</li>
+        <li>온도가 너무 높으면 발효 속도가 감소하는 까닭은 무엇일까?</li>
+        <li>발효관에서 발생한 기체가 CO₂임을 어떻게 확인할 수 있을까?</li>
+      </ul>
+    </article>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $=id=>document.getElementById(id);
+  const factor=$('factor'), substrate=$('substrate'), temp=$('temp'), tempOut=$('tempOut');
+  const vars=$('vars'), status=$('status'), gasNow=$('gasNow'), chart=$('chart'), analysis=$('analysis'), tbody=$('tbody');
+  let results=[];
+
+  const names = {
+    control:'대조군(증류수)', glucose:'포도당', galactose:'갈락토오스', sucrose:'설탕', lactose:'젖당', starch:'녹말'
+  };
+  const subFactor = {control:0.02, glucose:1.00, galactose:0.45, sucrose:0.78, lactose:0.08, starch:0.03};
+
+  function updateUI(){
+    tempOut.textContent=`${temp.value} ℃`;
+    vars.innerHTML=`<div><b>조작 변인</b>: ${factor.value==='substrate'?'기질의 종류':'온도'}</div>
+    <div><b>종속 변인</b>: 시간에 따른 기체 발생량</div>
+    <div><b>통제 변인</b>: 효모액의 양, 용액의 부피, 관찰 시간 25분, 발효관의 조건</div>`;
+  }
+
+  function tempEffect(T){
+    const rise=1/(1+Math.exp(-(T-18)/4));
+    const drop=1/(1+Math.exp((T-38)/2.4));
+    return 1.15*rise*drop;
+  }
+
+  function simulate(sub, T){
+    const base = 48 * subFactor[sub] * tempEffect(T);
+    const mins=[5,10,15,20,25];
+    const vals = mins.map(m=>{
+      const frac=1-Math.exp(-m/11);
+      const wiggle=0.2*Math.sin(m/4);
+      return Math.max(0, base*frac + wiggle);
+    });
+    return {mins, vals};
+  }
+
+  function draw(data){
+    const W=760,H=390,m={l:74,r:22,t:24,b:55};
+    const sx=x=>m.l+x/25*(W-m.l-m.r);
+    const ymax=Math.max(5, ...data.vals)*1.15;
+    const sy=y=>m.t+(ymax-y)/ymax*(H-m.t-m.b);
+    let h=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="#fff" stroke="#dbe1ea"/>`;
+    h+=`<text x="${(m.l+W-m.r)/2}" y="${H-12}" text-anchor="middle" font-size="13">시간 (분)</text>`;
+    h+=`<text x="20" y="${H/2}" text-anchor="middle" transform="rotate(-90 20 ${H/2})" font-size="13">기체 발생량 (mL)</text>`;
+    [0,5,10,15,20,25].forEach(x=>{
+      const xx=sx(x);
+      h+=`<line x1="${xx}" y1="${m.t}" x2="${xx}" y2="${H-m.b}" stroke="#eef2f7"/><text x="${xx}" y="${H-m.b+20}" text-anchor="middle" font-size="12" fill="#667085">${x}</text>`;
+    });
+    [0,.25,.5,.75,1].forEach(f=>{
+      const y=ymax*f, yy=sy(y);
+      h+=`<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="#eef2f7"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#667085">${y.toFixed(1)}</text>`;
+    });
+    const d=data.vals.map((v,i)=>`${i?'L':'M'} ${sx(data.mins[i]).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ');
+    h+=`<path d="${d}" fill="none" stroke="#6b4ce6" stroke-width="3"/>`;
+    data.vals.forEach((v,i)=>h+=`<circle cx="${sx(data.mins[i])}" cy="${sy(v)}" r="4" fill="#6b4ce6"/>`);
+    chart.innerHTML=h;
+  }
+
+  function renderTable(){
+    tbody.innerHTML=results.map((r,i)=>`<tr>
+      <td>${i+1}. ${r.mode}</td>
+      <td>${r.subName}</td>
+      <td>${r.temp} ℃</td>
+      ${r.vals.map(v=>`<td>${v.toFixed(1)}</td>`).join('')}
+    </tr>`).join('');
+  }
+
+  function runCurrent(){
+    const sub=substrate.value, T=+temp.value;
+    const data=simulate(sub,T);
+    results.push({mode:'현재 조건', sub, subName:names[sub], temp:T, ...data});
+    draw(data);
+    gasNow.textContent=data.vals[data.vals.length-1].toFixed(1);
+    analysis.innerHTML=`기질 <b>${names[sub]}</b>, 온도 <b>${T} ℃</b> 조건에서 25분 후 누적 기체 발생량은 약 <b>${data.vals[data.vals.length-1].toFixed(1)} mL</b>입니다. 발생한 기체의 양이 많을수록 효모의 발효가 더 활발하다고 해석할 수 있습니다.`;
+    renderTable();
+    status.textContent='실험을 완료했습니다.';
+  }
+
+  function compareAuto(){
+    results=[];
+    if(factor.value==='substrate'){
+      ['control','glucose','galactose','sucrose','lactose','starch'].forEach(sub=>{
+        const data=simulate(sub,+temp.value);
+        results.push({mode:'기질 비교', sub, subName:names[sub], temp:+temp.value, ...data});
+      });
+      const data=simulate('glucose', +temp.value);
+      draw(data);
+      gasNow.textContent=data.vals[4].toFixed(1);
+      analysis.innerHTML=`대표 화면에는 <b>포도당</b> 조건의 그래프를 표시했습니다. 아래 표에서 각 기질의 25분 후 기체 발생량을 비교해 보세요.`;
+      status.textContent='기질 종류를 자동 비교했습니다.';
+    } else {
+      [10,20,30,40].forEach(T=>{
+        const data=simulate('glucose',T);
+        results.push({mode:'온도 비교', sub:'glucose', subName:'포도당', temp:T, ...data});
+      });
+      const data=simulate('glucose',30);
+      draw(data);
+      gasNow.textContent=data.vals[4].toFixed(1);
+      analysis.innerHTML=`대표 화면에는 <b>30 ℃</b> 조건의 그래프를 표시했습니다. 아래 표에서 온도에 따른 기체 발생량 변화를 비교해 보세요.`;
+      status.textContent='온도 조건을 자동 비교했습니다.';
+    }
+    renderTable();
+  }
+
+  function csv(){
+    if(!results.length){ alert('저장할 결과가 없습니다.'); return; }
+    const rows=[['실험','기질','온도(℃)','5분','10분','15분','20분','25분']];
+    results.forEach(r=>rows.push([r.mode,r.subName,r.temp].concat(r.vals.map(v=>v.toFixed(1)))));
+    const blob=new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='효모의_발효_결과.csv'; a.click();
+  }
+
+  $('run').addEventListener('click', runCurrent);
+  $('compare').addEventListener('click', compareAuto);
+  $('reset').addEventListener('click', ()=>{results=[]; renderTable(); chart.innerHTML=''; gasNow.textContent='0.0'; analysis.innerHTML='실험을 실행하면 결과 해석이 표시됩니다.'; status.textContent='초기화했습니다.';});
+  $('csv').addEventListener('click', csv);
+  $('factor').addEventListener('change', updateUI);
+  $('temp').addEventListener('input', updateUI);
+  $('substrate').addEventListener('change', updateUI);
+
+  updateUI();
+  analysis.innerHTML='실험을 실행하면 결과 해석이 표시됩니다.';
+})();
+</script>
+</body>
+</html>

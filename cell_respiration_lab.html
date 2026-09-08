@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>온도에 따른 세포 호흡 속도 가상실험</title>
+<style>
+:root{
+  --bg:#f4f7f5; --panel:#ffffff; --line:#d7e0da; --text:#22312a;
+  --muted:#66756d; --accent:#2f6f52; --soft:#ecf4ef; --soft2:#f7f1e8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;line-height:1.55}
+button,input,select,textarea{font:inherit}
+.app{max-width:1180px;margin:0 auto;padding:18px}
+header{padding:10px 4px 18px}
+h1{margin:0;font-size:clamp(25px,4vw,35px)}
+header p{margin:8px 0 0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:.92fr 1.28fr;gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.field{margin:14px 0}
+label{display:block;font-weight:800;margin-bottom:6px}
+input[type=range],select,textarea{width:100%}
+select,textarea{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:white}
+textarea{min-height:82px;resize:vertical}
+.rangeRow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.value{font-weight:900}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{border:1px solid var(--line);background:white;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:white}
+.status{margin-top:10px;color:var(--muted);font-size:14px}
+.vars,.box{background:var(--soft);padding:12px 14px;border-radius:12px;font-size:14px}
+.metricWrap{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.metric{font-size:32px;font-weight:900;letter-spacing:-.04em}
+.chartWrap{overflow-x:auto}
+svg{width:100%;min-width:620px;height:auto}
+.tableWrap{overflow:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;min-width:760px;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:center}
+th:first-child,td:first-child{text-align:left}
+th{background:#f8fbf9}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.call{background:var(--soft2);padding:12px 14px;border-radius:12px;font-size:14px;margin-top:10px}
+.badge{display:inline-block;background:var(--soft);padding:4px 10px;border-radius:999px;font-size:12px;color:var(--muted);font-weight:700}
+.small{font-size:13px;color:var(--muted)}
+@media(max-width:900px){.grid,.two{grid-template-columns:1fr}.app{padding:12px}}
+@media print{.actions{display:none}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <span class="badge">생명과학 실험 11</span>
+    <h1>온도에 따른 세포 호흡 속도 가상실험</h1>
+    <p>발아 콩의 세포 호흡을 CO₂ 센서로 측정하는 교과서 실험을 가상으로 확인할 수 있습니다.</p>
+  </header>
+
+  <section class="grid">
+    <section class="panel">
+      <h2>1. 실험 설계</h2>
+      <div class="field">
+        <label for="temp">조작 변인: 온도</label>
+        <div class="rangeRow">
+          <input id="temp" type="range" min="5" max="45" step="1" value="25">
+          <output id="tempOut" class="value">25 ℃</output>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="beans">발아 콩 개수</label>
+        <select id="beans">
+          <option value="5" selected>5개</option>
+          <option value="10">10개</option>
+          <option value="15">15개</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="hypothesis">가설</label>
+        <textarea id="hypothesis" placeholder="예) 온도가 상승할수록 일정 범위까지는 세포 호흡 속도가 증가할 것이다."></textarea>
+      </div>
+
+      <div id="vars" class="vars"></div>
+
+      <div class="actions">
+        <button id="run" class="primary">현재 조건 실험</button>
+        <button id="compare">온도별 자동 비교</button>
+        <button id="reset">초기화</button>
+      </div>
+      <div id="status" class="status">교과서의 시범 실험처럼 5초 간격, 180초 동안 CO₂ 농도를 측정합니다.</div>
+    </section>
+
+    <section class="panel">
+      <div class="metricWrap">
+        <div>
+          <h2>2. CO₂ 농도 변화</h2>
+          <div class="small">측정 간격 5초 / 실험 시간 180초</div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">계산된 호흡 속도</div>
+          <div id="rateNow" class="metric">0.0</div>
+          <div class="small">ppm/분</div>
+        </div>
+      </div>
+      <div class="chartWrap"><svg id="timeChart" viewBox="0 0 760 390"></svg></div>
+      <div id="analysis" class="call"></div>
+    </section>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>3. 결과 및 고찰</h2>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>실험</th><th>온도</th><th>발아 콩</th><th>최솟값(ppm)</th><th>최댓값(ppm)</th><th>변화량(ppm)</th><th>호흡 속도(ppm/분)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button id="csv">CSV 저장</button>
+      <button onclick="window.print()">인쇄 / PDF 저장</button>
+    </div>
+  </section>
+
+  <section class="two">
+    <article class="card">
+      <h3>이론 핵심</h3>
+      <div class="box">
+        <b>세포호흡</b>은 유기물을 분해하여 ATP를 얻는 과정입니다.<br>
+        발아 콩은 생장에 많은 에너지가 필요하므로 호흡이 활발합니다.<br>
+        세포호흡 속도는 O₂ 소비량이나 CO₂ 생성량으로 측정할 수 있습니다.
+      </div>
+      <div class="call">
+        온도가 올라가면 효소 반응 속도가 일정 범위까지 증가하여 세포호흡 속도가 커집니다. 그러나 너무 높은 온도에서는 효소의 기능이 저하되어 속도가 다시 감소할 수 있습니다.
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>생각해 볼 점</h3>
+      <ul>
+        <li>왜 CO₂ 농도 변화량으로 세포호흡 속도를 추정할 수 있을까?</li>
+        <li>온도가 너무 높을 때 호흡 속도가 감소하는 까닭은 무엇일까?</li>
+        <li>발아 콩 대신 동물 세포를 이용한다면 결과 해석이 어떻게 달라질까?</li>
+      </ul>
+    </article>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $=id=>document.getElementById(id);
+  const temp=$('temp'), tempOut=$('tempOut'), beans=$('beans'), tbody=$('tbody'), status=$('status');
+  const vars=$('vars'), rateNow=$('rateNow'), timeChart=$('timeChart'), analysis=$('analysis');
+  let results=[];
+
+  function updateUI(){
+    tempOut.textContent=`${temp.value} ℃`;
+    vars.innerHTML=`<div><b>조작 변인</b>: 온도</div>
+    <div><b>종속 변인</b>: CO₂ 농도 변화, 호흡 속도</div>
+    <div><b>통제 변인</b>: 측정 시간 180초, 측정 간격 5초, 밀폐 용기, 발아 콩의 상태</div>`;
+  }
+
+  function beanFactor(){ return +beans.value / 5; }
+
+  function respRate(T){
+    const rise = 1/(1+Math.exp(-(T-12)/4.5));
+    const drop = 1/(1+Math.exp((T-38)/2.8));
+    return 26 * rise * drop * beanFactor();
+  }
+
+  function simulate(T){
+    const base = 400;
+    const rate = respRate(T);
+    const perSec = rate/60;
+    let times=[], vals=[];
+    for(let t=0;t<=180;t+=5){
+      const noise = 1.4*Math.sin(t/18)*Math.sin(t/7);
+      times.push(t);
+      vals.push(base + perSec*t + noise);
+    }
+    const min=Math.min(...vals), max=Math.max(...vals), diff=max-min;
+    return {times, vals, min, max, diff, rate: diff/3};
+  }
+
+  function drawTime(data){
+    const W=760,H=390,m={l:74,r:22,t:24,b:55};
+    const sx=x=>m.l+x/180*(W-m.l-m.r);
+    let ymin=Math.min(...data.vals)-5, ymax=Math.max(...data.vals)+5;
+    if(ymax-ymin<20){ymax+=10; ymin-=10;}
+    const sy=y=>m.t+(ymax-y)/(ymax-ymin)*(H-m.t-m.b);
+
+    let h=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="#fff" stroke="#d7e0da"/>`;
+    h+=`<text x="${(m.l+W-m.r)/2}" y="${H-12}" text-anchor="middle" font-size="13">시간 (초)</text>`;
+    h+=`<text x="20" y="${H/2}" text-anchor="middle" transform="rotate(-90 20 ${H/2})" font-size="13">CO₂ 농도 (ppm)</text>`;
+    for(let i=0;i<=6;i++){
+      const x=i*30, xx=sx(x);
+      h+=`<line x1="${xx}" y1="${m.t}" x2="${xx}" y2="${H-m.b}" stroke="#eef2ef"/><text x="${xx}" y="${H-m.b+20}" text-anchor="middle" font-size="12" fill="#66756d">${x}</text>`;
+    }
+    for(let i=0;i<=4;i++){
+      const y=ymin+(ymax-ymin)*i/4, yy=sy(y);
+      h+=`<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="#eef2ef"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#66756d">${y.toFixed(0)}</text>`;
+    }
+    const d=data.vals.map((v,i)=>`${i?'L':'M'} ${sx(data.times[i]).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ');
+    h+=`<path d="${d}" fill="none" stroke="#2f6f52" stroke-width="3"/>`;
+    data.vals.forEach((v,i)=>h+=`<circle cx="${sx(data.times[i])}" cy="${sy(v)}" r="3.8" fill="#2f6f52"/>`);
+    timeChart.innerHTML=h;
+  }
+
+  function renderTable(){
+    tbody.innerHTML=results.map((r,i)=>`<tr>
+      <td>${i+1}. ${r.mode}</td>
+      <td>${r.temp} ℃</td>
+      <td>${r.beans}개</td>
+      <td>${r.min.toFixed(1)}</td>
+      <td>${r.max.toFixed(1)}</td>
+      <td>${r.diff.toFixed(1)}</td>
+      <td>${r.rate.toFixed(2)}</td>
+    </tr>`).join('');
+  }
+
+  function runCurrent(){
+    const T=+temp.value, b=+beans.value;
+    const data=simulate(T);
+    results.push({mode:'현재 조건', temp:T, beans:b, ...data});
+    drawTime(data);
+    rateNow.textContent=data.rate.toFixed(1);
+    analysis.innerHTML=`온도 <b>${T} ℃</b>에서 CO₂ 농도는 약 <b>${data.diff.toFixed(1)} ppm</b> 증가했습니다. 호흡 속도는 <b>${data.rate.toFixed(2)} ppm/분</b>입니다. 이 값은 180초 동안의 CO₂ 변화량을 이용해 계산했습니다.`;
+    renderTable();
+    status.textContent='실험을 완료했습니다.';
+  }
+
+  function compareTemps(){
+    const temps=[5,15,25,35,45];
+    results=[];
+    temps.forEach(T=>{
+      const data=simulate(T);
+      results.push({mode:'온도 비교', temp:T, beans:+beans.value, ...data});
+    });
+    const mid=results[2];
+    drawTime(mid);
+    rateNow.textContent=mid.rate.toFixed(1);
+    analysis.innerHTML=`기본 화면에는 대표 조건 <b>${mid.temp} ℃</b>의 시간별 그래프를 표시했습니다. 아래 표에서 여러 온도 조건의 호흡 속도를 비교해 보세요.`;
+    renderTable();
+    status.textContent='5개 온도 조건을 자동으로 비교했습니다.';
+  }
+
+  function csv(){
+    if(!results.length){ alert('저장할 결과가 없습니다.'); return; }
+    const rows=[['실험','온도(℃)','발아콩수','최솟값(ppm)','최댓값(ppm)','변화량(ppm)','호흡속도(ppm/분)']];
+    results.forEach(r=>rows.push([r.mode,r.temp,r.beans,r.min.toFixed(1),r.max.toFixed(1),r.diff.toFixed(1),r.rate.toFixed(2)]));
+    const blob=new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='온도에_따른_세포호흡_결과.csv'; a.click();
+  }
+
+  $('run').addEventListener('click', runCurrent);
+  $('compare').addEventListener('click', compareTemps);
+  $('reset').addEventListener('click', ()=>{results=[]; renderTable(); timeChart.innerHTML=''; rateNow.textContent='0.0'; analysis.innerHTML='실험을 실행하면 결과 해석이 표시됩니다.'; status.textContent='초기화했습니다.';});
+  $('csv').addEventListener('click', csv);
+  $('temp').addEventListener('input', updateUI);
+  $('beans').addEventListener('change', updateUI);
+
+  updateUI();
+  analysis.innerHTML='실험을 실행하면 결과 해석이 표시됩니다.';
+})();
+</script>
+</body>
+</html>

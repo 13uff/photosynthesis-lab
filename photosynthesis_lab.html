@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>광합성 속도에 영향을 주는 요인 가상실험</title>
+<style>
+:root{
+  --bg:#f5f7f4; --panel:#fff; --soft:#eef4ef; --soft2:#f5f2e8; --text:#202a24;
+  --muted:#66716b; --line:#d5ddd7; --accent:#246b45; --accent2:#174a31;
+  --series1:#2d6a4f; --series2:#7b5d24; --danger:#9a3b3b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:1240px;margin:0 auto;padding:20px}
+.hero{padding:22px 4px 16px}
+.hero h1{margin:0;font-size:clamp(24px,4vw,36px);letter-spacing:-.04em}
+.hero p{margin:8px 0 0;color:var(--muted)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-weight:700;color:var(--muted)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:minmax(300px,.88fr) minmax(0,1.35fr);gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.panel h2,.panel h3{margin:0 0 10px;letter-spacing:-.02em}
+.note{font-size:14px;color:var(--muted)}
+.field{margin:15px 0}
+.field label{display:block;font-weight:700;margin-bottom:6px}
+select,input[type=number],textarea{width:100%;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:10px;padding:10px 11px}
+textarea{min-height:92px;resize:vertical}
+.rangeRow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.value{font-weight:800;min-width:112px;text-align:right}
+.vars{background:var(--soft);border-radius:12px;padding:12px 14px;font-size:14px}
+.vars div+div{margin-top:4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 13px;font-weight:800;min-height:43px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.secondary{background:var(--soft);border-color:#c9d9ce}
+.btn.danger{color:var(--danger)}
+.status{margin-top:11px;color:var(--muted);font-size:14px}
+.metricWrap{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:7px}
+.metric{font-size:32px;font-weight:900;letter-spacing:-.04em}
+.chartWrap{overflow-x:auto;border-top:1px solid var(--line);padding-top:8px}
+svg.chart{width:100%;min-width:610px;height:auto;display:block}
+.key{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.explain{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--soft2);font-size:14px}
+.tableWrap{overflow:auto;margin-top:16px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:center;white-space:nowrap}
+th{background:#f8faf8;position:sticky;top:0}
+td:first-child,th:first-child{text-align:left}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h3{margin:0 0 8px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.pill{background:var(--soft);border-radius:999px;padding:7px 10px;font-weight:700}
+.arrow{color:var(--muted)}
+.eq{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f7f7f4;padding:10px;border-radius:10px;overflow:auto}
+.callout{border-left:4px solid var(--accent);padding:9px 12px;background:var(--soft);border-radius:0 10px 10px 0}
+.activity{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.small{font-size:13px;color:var(--muted)}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-size:12px;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
+details+details{margin-top:10px}
+summary{font-weight:800;cursor:pointer}
+footer{padding:20px 4px 6px;color:var(--muted);font-size:13px}
+@media(max-width:900px){.grid,.cards,.activity{grid-template-columns:1fr}.app{padding:12px}.panel{padding:15px}}
+@media print{.tabs,.actions,.noPrint{display:none!important}.page{display:block!important}.panel,.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="hero">
+    <span class="badge">생명과학 실험 65~69쪽 연계</span>
+    <h1>광합성 속도에 영향을 주는 요인 가상실험</h1>
+    <p>가설을 세우고 조작 변인을 바꾸어 CO₂·O₂ 변화율과 잎 디스크의 부상 시간을 비교해 보세요.</p>
+  </header>
+
+  <nav class="tabs" aria-label="학습 메뉴">
+    <button class="tab active" data-page="lab">가상실험</button>
+    <button class="tab" data-page="theory">이론 정리</button>
+    <button class="tab" data-page="record">탐구 기록</button>
+  </nav>
+
+  <section id="lab" class="page active">
+    <div class="grid">
+      <section class="panel">
+        <h2>1. 실험 설계</h2>
+        <p class="note">한 번에 하나의 요인만 바꾸고, 나머지 조건은 일정하게 유지합니다.</p>
+
+        <div class="field">
+          <label for="factor">변화시킬 요인(조작 변인)</label>
+          <select id="factor">
+            <option value="light">빛의 세기</option>
+            <option value="co2">이산화 탄소 농도</option>
+            <option value="temp">온도</option>
+            <option value="wave">빛의 파장</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="method">광합성률 측정 방법</label>
+          <select id="method">
+            <option value="co2sensor">CO₂ 센서 — 300초 동안 CO₂ 변화율</option>
+            <option value="o2sensor">O₂ 센서 — 300초 동안 O₂ 변화율</option>
+            <option value="disk">잎 디스크 — 떠오르는 시간</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="hypothesis">가설</label>
+          <textarea id="hypothesis" placeholder="예) 빛의 세기가 증가할수록 광합성 속도가 증가할 것이다."></textarea>
+        </div>
+
+        <div class="field" id="lightField">
+          <div class="rangeRow"><label for="light">빛의 세기</label><output class="value" id="lightOut"></output></div>
+          <input id="light" type="range" min="0" max="40000" step="500" value="12000">
+        </div>
+
+        <div class="field" id="co2Field">
+          <div class="rangeRow"><label for="co2">CO₂ 농도</label><output class="value" id="co2Out"></output></div>
+          <input id="co2" type="range" min="100" max="3000" step="50" value="300">
+        </div>
+
+        <div class="field" id="tempField">
+          <div class="rangeRow"><label for="temp">온도</label><output class="value" id="tempOut"></output></div>
+          <input id="temp" type="range" min="5" max="50" step="1" value="25">
+        </div>
+
+        <div class="field" id="waveField">
+          <div class="rangeRow"><label for="wave">빛의 파장</label><output class="value" id="waveOut"></output></div>
+          <input id="wave" type="range" min="400" max="700" step="5" value="660">
+        </div>
+
+        <div id="vars" class="vars"></div>
+
+        <div class="actions">
+          <button id="measure" class="btn primary">현재 조건 실험</button>
+          <button id="auto" class="btn secondary">조건별 자동 비교</button>
+          <button id="reset" class="btn danger">결과 초기화</button>
+        </div>
+        <div id="status" class="status" aria-live="polite">조건을 설정한 뒤 실험을 시작하세요.</div>
+      </section>
+
+      <section class="panel">
+        <div class="metricWrap">
+          <div>
+            <h2>2. 측정 결과</h2>
+            <div id="methodDesc" class="note"></div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">현재 조건의 순광합성률</div>
+            <div class="metric" id="rateNow">0.0</div>
+            <div class="small">교육용 상대값</div>
+          </div>
+        </div>
+
+        <div class="chartWrap"><svg id="timeChart" class="chart" viewBox="0 0 760 390" role="img" aria-label="300초 동안 센서 또는 잎 디스크 결과"></svg></div>
+        <div id="detailText" class="explain"></div>
+
+        <h3 style="margin-top:18px">조건별 비교</h3>
+        <div class="chartWrap"><svg id="compareChart" class="chart" viewBox="0 0 760 360" role="img" aria-label="조작 변인과 광합성률 관계 그래프"></svg></div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:16px">
+      <h2>3. 실험 결과표</h2>
+      <p class="note">실험값은 실제 특정 식물의 정밀 측정값이 아니라 교과 개념을 재현한 교육용 모형입니다.</p>
+      <div class="tableWrap">
+        <table>
+          <thead><tr><th>실험</th><th>조작 변인</th><th>빛</th><th>CO₂</th><th>온도</th><th>파장</th><th>순광합성률</th><th>CO₂ 변화율</th><th>O₂ 변화율</th><th>잎 디스크</th></tr></thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+      <div class="actions noPrint">
+        <button id="csv" class="btn">결과 CSV 저장</button>
+        <button id="print" class="btn">인쇄 / PDF 저장</button>
+      </div>
+    </section>
+  </section>
+
+  <section id="theory" class="page">
+    <div class="cards">
+      <article class="card">
+        <h3>1. 광합성이란?</h3>
+        <p>광합성은 식물이 <b>빛에너지</b>를 이용하여 이산화 탄소와 물로 유기물을 합성하고 산소를 방출하는 <b>동화작용</b>입니다.</p>
+        <div class="eq">6CO₂ + 12H₂O → C₆H₁₂O₆ + 6O₂ + 6H₂O</div>
+        <p class="small">광합성은 크게 명반응과 탄소 고정 반응으로 구분합니다.</p>
+      </article>
+
+      <article class="card">
+        <h3>2. 광합성색소와 빛의 파장</h3>
+        <p>엽록소와 카로티노이드는 타이라코이드 막에 있습니다. 엽록소는 청자색광과 적색광을 잘 흡수하고 녹색광은 대부분 반사하거나 통과시킵니다.</p>
+        <div class="flow">
+          <span class="pill">청자색광 ≈ 400~450 nm</span><span class="pill">적색광 ≈ 650~700 nm</span>
+        </div>
+        <p class="small">흡수스펙트럼과 작용스펙트럼이 비슷한 것은 광합성색소가 흡수한 빛이 실제 광합성에 이용됨을 보여 줍니다.</p>
+      </article>
+
+      <article class="card">
+        <h3>3. 명반응 — 타이라코이드 막</h3>
+        <div class="flow"><span class="pill">빛</span><span class="arrow">→</span><span class="pill">광계Ⅱ</span><span class="arrow">→</span><span class="pill">전자전달계</span><span class="arrow">→</span><span class="pill">광계Ⅰ</span></div>
+        <p>빛을 흡수한 광계에서 고에너지 전자가 방출됩니다. 전자전달 과정에서 H⁺ 농도 기울기가 만들어지고 ATP 합성효소를 통해 <b>ATP</b>가 합성됩니다. 광계Ⅰ을 거친 전자는 NADP⁺에 전달되어 <b>NADPH</b>를 생성합니다.</p>
+        <div class="callout">명반응의 결과: <b>ATP + NADPH + O₂</b></div>
+      </article>
+
+      <article class="card">
+        <h3>4. 탄소 고정 반응 — 스트로마</h3>
+        <p>스트로마에서 <b>루비스코</b>가 CO₂를 5탄소 화합물 RuBP에 결합시켜 탄소 고정을 시작합니다.</p>
+        <div class="flow"><span class="pill">CO₂ + RuBP</span><span class="arrow">→</span><span class="pill">3PG</span><span class="arrow">→</span><span class="pill">PGAL</span><span class="arrow">→</span><span class="pill">당 합성 / RuBP 재생</span></div>
+        <p>3PG의 환원에는 명반응에서 만든 ATP와 NADPH가 사용되고, RuBP 재생에도 ATP가 사용됩니다.</p>
+      </article>
+
+      <article class="card">
+        <h3>5. 빛의 세기와 광합성률</h3>
+        <p><b>어두울 때</b>는 광합성보다 호흡만 두드러집니다. 빛이 증가하면 순광합성률이 증가합니다.</p>
+        <p><b>보상점</b>: 광합성량과 호흡량이 같아 기체의 순출입이 0이 되는 빛의 세기</p>
+        <p><b>광포화점</b>: 그 이상 빛을 강하게 해도 광합성 속도가 거의 증가하지 않는 빛의 세기</p>
+        <div class="callout">빛이 충분해진 뒤에는 CO₂ 공급이나 탄소 고정 능력 등 다른 요인이 제한 요인이 됩니다.</div>
+      </article>
+
+      <article class="card">
+        <h3>6. 온도와 광합성률</h3>
+        <p>탄소 고정 반응은 스트로마의 여러 <b>효소</b>가 촉매합니다. 따라서 낮은 온도에서는 반응이 느리고, 온도가 올라가면 일정 범위에서 반응 속도가 빨라집니다.</p>
+        <p>적정 온도를 넘어 지나치게 높아지면 효소의 기능 저하와 광호흡 증가 등의 영향으로 순광합성률이 감소합니다.</p>
+        <p class="small">이 가상실험은 교과서의 전형적인 '최적 온도' 곡선을 보여 주도록 구성했습니다.</p>
+      </article>
+
+      <article class="card">
+        <h3>7. CO₂ 농도와 광합성률</h3>
+        <p>CO₂는 탄소 고정 반응의 직접적인 원료입니다. 다른 조건이 같을 때 CO₂ 농도를 높이면 탄소 고정 속도가 증가합니다.</p>
+        <p>하지만 어느 농도 이상에서는 루비스코의 처리 능력, RuBP 재생, ATP·NADPH 공급 등 다른 과정이 제한 요인이 되어 증가 폭이 작아집니다.</p>
+        <div class="callout">따라서 CO₂ 농도–광합성률 그래프도 계속 직선으로 증가하지 않고 포화되는 형태를 보입니다.</div>
+      </article>
+
+      <article class="card">
+        <h3>8. 왜 CO₂와 O₂로 광합성률을 측정할까?</h3>
+        <p>광합성에서는 <b>CO₂가 소비</b>되고 <b>O₂가 생성</b>됩니다. 밀폐된 용기에서 일정 시간 동안 농도 변화를 측정하면 단위 시간당 광합성의 정도를 비교할 수 있습니다.</p>
+        <p>단, 살아 있는 잎에서는 세포호흡도 동시에 일어나므로 센서로 측정되는 값은 실제 수업에서 <b>순광합성</b>의 영향을 반영한다고 보는 것이 좋습니다.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="record" class="page">
+    <section class="panel">
+      <h2>탐구 기록지</h2>
+      <div class="activity">
+        <div class="field"><label for="rq">탐구 문제</label><textarea id="rq">빛의 세기, 이산화 탄소 농도, 온도 등의 요인은 광합성 속도에 어떤 영향을 미칠까?</textarea></div>
+        <div class="field"><label for="hyp2">가설</label><textarea id="hyp2" placeholder="조작 변인과 예상 결과의 관계가 드러나도록 작성하세요."></textarea></div>
+        <div class="field"><label for="varRecord">변인 설정</label><textarea id="varRecord" placeholder="조작 변인:\n종속 변인:\n통제 변인:"></textarea></div>
+        <div class="field"><label for="reason">결과 해석</label><textarea id="reason" placeholder="그래프의 증가·포화·감소 구간을 설명하세요."></textarea></div>
+        <div class="field"><label for="error">오차 또는 실제 실험에서 고려할 점</label><textarea id="error" placeholder="예) 잎의 크기, 온도 변화, 센서 밀폐 정도, LED와 시료 거리 등"></textarea></div>
+        <div class="field"><label for="conclusion">결론</label><textarea id="conclusion" placeholder="가설이 지지되었는지와 제한 요인이 어떻게 달라졌는지 정리하세요."></textarea></div>
+      </div>
+      <div class="actions noPrint"><button id="sync" class="btn secondary">현재 실험 변인 가져오기</button><button id="print2" class="btn">탐구 기록 인쇄</button></div>
+    </section>
+
+    <section class="panel" style="margin-top:16px">
+      <h3>생각해 볼 질문</h3>
+      <details><summary>Q1. CO₂ 센서에서 농도가 감소할수록 왜 광합성이 활발하다고 볼 수 있을까?</summary><p>밀폐된 조건에서 잎이 탄소 고정에 CO₂를 사용하기 때문입니다. 단위 시간당 CO₂ 감소 폭이 클수록 순 CO₂ 흡수가 크다고 해석할 수 있습니다.</p></details>
+      <details><summary>Q2. 빛이 매우 강해졌는데도 광합성률이 거의 증가하지 않는 이유는?</summary><p>빛이 더 이상 주된 제한 요인이 아니기 때문입니다. CO₂ 공급, 탄소 고정 효소의 처리 능력, RuBP 재생 등 다른 과정이 전체 속도를 제한합니다.</p></details>
+      <details><summary>Q3. 잎 디스크가 떠오르는 시간으로 광합성률을 비교할 수 있는 이유는?</summary><p>광합성으로 생성된 산소가 잎 조직의 공기 공간에 축적되면서 디스크의 부력이 증가합니다. 광합성이 빠른 조건일수록 일반적으로 더 빨리 떠오릅니다.</p></details>
+    </section>
+  </section>
+
+  <footer>교육용 모형 · 생명과학 실험 65~69쪽의 탐구 구조와 「세포와 물질대사」 광합성 단원 수준을 바탕으로 구성</footer>
+</main>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const els = {
+ factor:$('factor'), method:$('method'), light:$('light'), co2:$('co2'), temp:$('temp'), wave:$('wave'),
+ lightOut:$('lightOut'),co2Out:$('co2Out'),tempOut:$('tempOut'),waveOut:$('waveOut'),
+ vars:$('vars'),status:$('status'),rateNow:$('rateNow'),methodDesc:$('methodDesc'),
+ timeChart:$('timeChart'),compareChart:$('compareChart'),resultBody:$('resultBody'),detailText:$('detailText'),
+ hypothesis:$('hypothesis')
+};
+let results=[];
+const factorInfo={
+ light:{label:'빛의 세기',unit:'lux',values:[0,4000,9000,18000,32000]},
+ co2:{label:'CO₂ 농도',unit:'ppm',values:[150,300,700,1500,2800]},
+ temp:{label:'온도',unit:'℃',values:[5,15,25,35,45]},
+ wave:{label:'빛의 파장',unit:'nm',values:[420,480,550,620,680]}
+};
+function p(){return {light:+els.light.value,co2:+els.co2.value,temp:+els.temp.value,wave:+els.wave.value}}
+function wavelengthEffect(w){
+  const blue=0.78*Math.exp(-Math.pow((w-440)/45,2));
+  const red=1.00*Math.exp(-Math.pow((w-670)/48,2));
+  const base=0.12;
+  return Math.min(1,base+blue+red);
+}
+function tempEffect(T){
+  const rise=1/(1+Math.exp(-(T-14)/5));
+  const highDrop=1/(1+Math.exp((T-39)/3.2));
+  return Math.min(1.05,1.28*rise*highDrop);
+}
+function grossRate(q){
+  const lightF=1-Math.exp(-Math.max(0,q.light)/7500);
+  const co2F=1-Math.exp(-Math.max(0,q.co2)/650);
+  return 24*lightF*co2F*tempEffect(q.temp)*wavelengthEffect(q.wave);
+}
+function respiration(q){
+  return 2.1*Math.pow(1.055,q.temp-25);
+}
+function netRate(q){return grossRate(q)-respiration(q)}
+function outputs(q){
+  const r=netRate(q);
+  const co2Slope=-0.042*r; // ppm/s pedagogical
+  const o2Slope=0.020*r;   // %/300 s scaled
+  const diskTime=r>0.35 ? Math.min(600,Math.max(20,720/(r+0.8))) : null;
+  return {rate:r,co2Slope,o2Slope,diskTime};
+}
+function fmt(v,n=1){return Number(v).toFixed(n)}
+function waveColor(w){
+  if(w<450)return '청자색광'; if(w<500)return '청색광'; if(w<570)return '녹색광'; if(w<610)return '황색광'; if(w<650)return '주황색광'; return '적색광';
+}
+function updateUI(){
+ const q=p();
+ els.lightOut.textContent=`${q.light.toLocaleString()} lux`;
+ els.co2Out.textContent=`${q.co2} ppm`;
+ els.tempOut.textContent=`${q.temp} ℃`;
+ els.waveOut.textContent=`${q.wave} nm · ${waveColor(q.wave)}`;
+ const f=els.factor.value;
+ els.vars.innerHTML=`<div><b>조작 변인</b>: ${factorInfo[f].label}</div>
+ <div><b>종속 변인</b>: 광합성률 (${els.method.value==='co2sensor'?'CO₂ 변화율':els.method.value==='o2sensor'?'O₂ 변화율':'잎 디스크가 떠오르는 시간'})</div>
+ <div><b>통제 변인</b>: ${controlText(f,q)}</div>`;
+ const o=outputs(q);
+ els.rateNow.textContent=fmt(o.rate,1);
+ els.methodDesc.textContent = els.method.value==='co2sensor' ? '교과서 예시처럼 2초 간격으로 300초 동안 CO₂ 농도를 측정합니다.'
+ : els.method.value==='o2sensor' ? '2초 간격으로 300초 동안 O₂ 농도의 변화를 측정합니다.'
+ : '10개의 잎 디스크가 떠오르는 시간을 모의 측정합니다.';
+ if(results.length===0) drawEmptyTime();
+}
+function controlText(f,q){
+ const a=[];
+ if(f!=='light')a.push(`빛 ${q.light.toLocaleString()} lux`);
+ if(f!=='co2')a.push(`CO₂ ${q.co2} ppm`);
+ if(f!=='temp')a.push(`온도 ${q.temp} ℃`);
+ if(f!=='wave')a.push(`파장 ${q.wave} nm`);
+ return a.join(', ');
+}
+function svgBase(W,H,m,xlabel,ylabel){
+ let h=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="#fff" stroke="#d5ddd7"/>`;
+ h+=`<text x="${(m.l+W-m.r)/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#364039">${xlabel}</text>`;
+ h+=`<text x="18" y="${H/2}" text-anchor="middle" transform="rotate(-90 18 ${H/2})" font-size="13" fill="#364039">${ylabel}</text>`;
+ return h;
+}
+function drawEmptyTime(){
+ const W=760,H=390,m={l:70,r:22,t:24,b:55};
+ let h=svgBase(W,H,m,'시간 (초)','측정값');
+ h+=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#66716b" font-size="15">‘현재 조건 실험’을 눌러 300초 측정을 시작하세요.</text>`;
+ els.timeChart.innerHTML=h;
+ drawCompare();
+ els.detailText.innerHTML='실험을 실행하면 센서 변화 또는 잎 디스크 부상 결과가 나타납니다.';
+}
+function drawTime(q,o){
+ const method=els.method.value,W=760,H=390,m={l:76,r:22,t:24,b:55};
+ if(method==='disk'){ drawDisk(q,o); return; }
+ const times=[]; for(let t=0;t<=300;t+=2)times.push(t);
+ const start=method==='co2sensor'?q.co2:20.9;
+ const vals=times.map(t=>{
+   const slope=method==='co2sensor'?o.co2Slope:o.o2Slope/300;
+   const wiggle=(method==='co2sensor'?1.2:0.004)*Math.sin(t/19)*Math.sin(t/7);
+   return start+slope*t+wiggle;
+ });
+ let ymin=Math.min(...vals),ymax=Math.max(...vals);
+ if(Math.abs(ymax-ymin)<1){ymin-=.5;ymax+=.5}
+ const pad=(ymax-ymin)*.15;ymin-=pad;ymax+=pad;
+ const sx=x=>m.l+x/300*(W-m.l-m.r), sy=y=>m.t+(ymax-y)/(ymax-ymin)*(H-m.t-m.b);
+ const ylabel=method==='co2sensor'?'CO₂ 농도 (ppm)':'O₂ 농도 (%)';
+ let h=svgBase(W,H,m,'시간 (초)',ylabel);
+ for(let i=0;i<=5;i++){const t=i*60,x=sx(t);h+=`<line x1="${x}" y1="${m.t}" x2="${x}" y2="${H-m.b}" stroke="#edf0ed"/><text x="${x}" y="${H-m.b+20}" text-anchor="middle" font-size="12" fill="#66716b">${t}</text>`}
+ for(let i=0;i<=4;i++){const y=ymin+(ymax-ymin)*i/4,yy=sy(y);h+=`<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="#edf0ed"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#66716b">${method==='co2sensor'?y.toFixed(0):y.toFixed(3)}</text>`}
+ const d=vals.map((v,i)=>`${i?'L':'M'} ${sx(times[i]).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ');
+ h+=`<path d="${d}" fill="none" stroke="#2d6a4f" stroke-width="3"/>`;
+ els.timeChart.innerHTML=h;
+ const slope=method==='co2sensor'?o.co2Slope:o.o2Slope/300;
+ if(method==='co2sensor'){
+   els.detailText.innerHTML=`300초 동안 CO₂는 약 <b>${Math.abs(o.co2Slope*300).toFixed(1)} ppm ${o.co2Slope<0?'감소':'증가'}</b>합니다. 변화율은 <b>${o.co2Slope.toFixed(3)} ppm/s</b>입니다. ${o.rate>0?'CO₂가 순흡수되므로 광합성이 호흡보다 큰 조건입니다.':'순 CO₂ 방출이 나타나므로 호흡의 영향이 더 큰 조건입니다.'}`;
+ } else {
+   els.detailText.innerHTML=`300초 동안 O₂는 약 <b>${Math.abs(o.o2Slope).toFixed(3)} %p ${o.o2Slope>0?'증가':'감소'}</b>하도록 모의됩니다. ${o.rate>0?'O₂ 순생성이 나타나는 조건입니다.':'O₂ 순소비가 나타나는 조건입니다.'}`;
+ }
+}
+function drawDisk(q,o){
+ const W=760,H=390,m={l:70,r:22,t:24,b:55};
+ let h=svgBase(W,H,m,'시간 (초)','떠오른 잎 디스크 수');
+ const times=[]; for(let t=0;t<=300;t+=10)times.push(t);
+ let diskTimes=[];
+ if(o.diskTime!==null){
+   const mult=[.72,.80,.88,.94,1,1.05,1.12,1.20,1.30,1.42];
+   diskTimes=mult.map(x=>o.diskTime*x);
+ } else diskTimes=Array(10).fill(999);
+ const counts=times.map(t=>diskTimes.filter(x=>x<=t).length);
+ const sx=x=>m.l+x/300*(W-m.l-m.r),sy=y=>m.t+(10-y)/10*(H-m.t-m.b);
+ for(let i=0;i<=5;i++){const t=i*60,x=sx(t);h+=`<line x1="${x}" y1="${m.t}" x2="${x}" y2="${H-m.b}" stroke="#edf0ed"/><text x="${x}" y="${H-m.b+20}" text-anchor="middle" font-size="12" fill="#66716b">${t}</text>`}
+ for(let y=0;y<=10;y+=2){const yy=sy(y);h+=`<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="#edf0ed"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="12" fill="#66716b">${y}</text>`}
+ const d=counts.map((v,i)=>`${i?'L':'M'} ${sx(times[i]).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ');
+ h+=`<path d="${d}" fill="none" stroke="#7b5d24" stroke-width="3"/>`;
+ counts.forEach((v,i)=>h+=`<circle cx="${sx(times[i])}" cy="${sy(v)}" r="3.5" fill="#7b5d24"/>`);
+ els.timeChart.innerHTML=h;
+ const in300=diskTimes.filter(x=>x<=300);
+ els.detailText.innerHTML = o.diskTime===null ? `300초 이내에 떠오르는 잎 디스크가 거의 없습니다. 순광합성이 매우 낮은 조건으로 해석할 수 있습니다.`
+ : `첫 디스크는 약 <b>${Math.round(diskTimes[0])}초</b>, 중앙값에 가까운 디스크는 약 <b>${Math.round(diskTimes[4])}초</b>에 떠오르도록 모의했습니다. 300초 이내 부상: <b>${in300.length}/10개</b>.`;
+}
+function addResult(q,label){
+ const o=outputs(q);
+ results.push({id:results.length+1,label,q:{...q},...o});
+ renderTable(); drawCompare(); return o;
+}
+function runCurrent(){
+ const q=p(),f=els.factor.value,o=addResult(q,`${factorInfo[f].label} ${q[f]} ${factorInfo[f].unit}`);
+ drawTime(q,o); els.status.textContent='300초 모의 실험을 완료했습니다.';
+}
+function runAuto(){
+ const f=els.factor.value,base=p(),vals=factorInfo[f].values;
+ results=results.filter(r=>r.auto!==true);
+ vals.forEach((v,i)=>{const q={...base,[f]:v},o=outputs(q);results.push({id:results.length+1,label:`${factorInfo[f].label} ${v} ${factorInfo[f].unit}`,q,...o,auto:true})});
+ renderTable(); drawCompare();
+ const mid={...base,[f]:vals[Math.floor(vals.length/2)]}; drawTime(mid,outputs(mid));
+ els.status.textContent=`${factorInfo[f].label}을(를) 5단계로 변화시켜 비교했습니다.`;
+}
+function renderTable(){
+ els.resultBody.innerHTML=results.map((r,i)=>`<tr>
+ <td>${i+1}. ${r.label}</td><td>${factorInfo[els.factor.value]?.label||'-'}</td>
+ <td>${r.q.light.toLocaleString()} lux</td><td>${r.q.co2} ppm</td><td>${r.q.temp} ℃</td><td>${r.q.wave} nm</td>
+ <td>${r.rate.toFixed(2)}</td><td>${r.co2Slope.toFixed(3)} ppm/s</td><td>${r.o2Slope.toFixed(3)} %p/300s</td>
+ <td>${r.diskTime===null?'300초 내 거의 없음':Math.round(r.diskTime)+' s'}</td></tr>`).join('');
+}
+function drawCompare(){
+ const f=els.factor.value,info=factorInfo[f],W=760,H=360,m={l:68,r:22,t:24,b:58};
+ const base=p(),vals=info.values.map(v=>({x:v,y:netRate({...base,[f]:v})}));
+ let ymin=Math.min(-3,...vals.map(d=>d.y)),ymax=Math.max(5,...vals.map(d=>d.y));
+ const pad=(ymax-ymin)*.12;ymin-=pad;ymax+=pad;
+ const xmin=Math.min(...vals.map(d=>d.x)),xmax=Math.max(...vals.map(d=>d.x));
+ const sx=x=>m.l+(x-xmin)/(xmax-xmin||1)*(W-m.l-m.r), sy=y=>m.t+(ymax-y)/(ymax-ymin)*(H-m.t-m.b);
+ let h=svgBase(W,H,m,`${info.label} (${info.unit})`,'순광합성률 (상대값)');
+ for(let i=0;i<=4;i++){const y=ymin+(ymax-ymin)*i/4,yy=sy(y);h+=`<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="#edf0ed"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#66716b">${y.toFixed(1)}</text>`}
+ if(ymin<0&&ymax>0)h+=`<line x1="${m.l}" y1="${sy(0)}" x2="${W-m.r}" y2="${sy(0)}" stroke="#8b948e" stroke-dasharray="5 5"/>`;
+ vals.forEach(d=>h+=`<line x1="${sx(d.x)}" y1="${m.t}" x2="${sx(d.x)}" y2="${H-m.b}" stroke="#f1f3f1"/><text x="${sx(d.x)}" y="${H-m.b+21}" text-anchor="middle" font-size="11" fill="#66716b">${d.x}</text>`);
+ const d=vals.map((v,i)=>`${i?'L':'M'} ${sx(v.x).toFixed(1)} ${sy(v.y).toFixed(1)}`).join(' ');
+ h+=`<path d="${d}" fill="none" stroke="#2d6a4f" stroke-width="3"/>`;
+ vals.forEach(v=>h+=`<circle cx="${sx(v.x)}" cy="${sy(v.y)}" r="5" fill="#2d6a4f"/>`);
+ els.compareChart.innerHTML=h;
+}
+function reset(){results=[];renderTable();drawEmptyTime();els.status.textContent='모든 실험 결과를 초기화했습니다.'}
+function csv(){
+ if(!results.length){alert('저장할 실험 결과가 없습니다.');return}
+ const rows=[['실험','빛(lux)','CO2(ppm)','온도(C)','파장(nm)','순광합성률','CO2변화율(ppm/s)','O2변화(%p/300s)','잎디스크시간(s)']];
+ results.forEach(r=>rows.push([r.label,r.q.light,r.q.co2,r.q.temp,r.q.wave,r.rate.toFixed(3),r.co2Slope.toFixed(4),r.o2Slope.toFixed(4),r.diskTime===null?'NA':r.diskTime.toFixed(1)]));
+ const blob=new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='광합성_가상실험_결과.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function syncRecord(){
+ const f=els.factor.value,q=p();
+ $('hyp2').value=els.hypothesis.value;
+ $('varRecord').value=`조작 변인: ${factorInfo[f].label}\n종속 변인: ${els.method.value==='co2sensor'?'CO₂ 변화율':els.method.value==='o2sensor'?'O₂ 변화율':'잎 디스크가 떠오르는 시간'}\n통제 변인: ${controlText(f,q)}`;
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');$(b.dataset.page).classList.add('active');
+}));
+[els.factor,els.method,els.light,els.co2,els.temp,els.wave].forEach(x=>x.addEventListener('input',updateUI));
+els.factor.addEventListener('change',()=>{results=[];renderTable();updateUI();drawEmptyTime();});
+els.method.addEventListener('change',()=>{updateUI();drawEmptyTime()});
+$('measure').addEventListener('click',runCurrent);$('auto').addEventListener('click',runAuto);$('reset').addEventListener('click',reset);
+$('csv').addEventListener('click',csv);$('print').addEventListener('click',()=>window.print());$('print2').addEventListener('click',()=>window.print());$('sync').addEventListener('click',syncRecord);
+updateUI();renderTable();drawEmptyTime();
+})();
+</script>
+</body>
+</html>
